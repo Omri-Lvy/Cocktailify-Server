@@ -6,7 +6,10 @@ from flask_cors import CORS
 from app.config import Config
 
 app = Flask(__name__)
-allow_origins = app.config['ORIGINS']
+allow_origins =[
+    app.config['PROD_ORIGIN'],
+    app.config['DEV_ORIGIN'],
+]
 app.config['MONGO_URI'] = Config.MONGO_URI
 CORS(app, origins=allow_origins)
 mongo = PyMongo(app)
