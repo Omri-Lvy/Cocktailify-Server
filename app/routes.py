@@ -1,23 +1,35 @@
-from flask import request, redirect, url_for
+from flask import request, redirect, url_for, jsonify
+import json
 from app import app
 from app.models.user import User
 from app.services.cocktails_service import get_cocktails, get_cocktail_by_name, search_cocktails, \
     search_cocktails_by_category, search_cocktails_by_alcoholic
 
 
-@app.route('/')
-def index():
-    return 'Hello, Omri!'
-
-
 @app.route('/register', methods=['POST'])
 def register():
-    name = request.form['name']
-    email = request.form['email']
-    password = request.form['password']
-    user = User(name, email, password)
-    user.register()
-    return 'User registered!'
+    try:
+        request_data = request.get_json()
+        data = json.loads(request_data)
+        if not data:
+            return jsonify({'isSuccess': False, 'message': 'No data provided'}), 400
+
+        name = data.get('name')
+        email = data.get('email')
+        password = data.get('password')
+        # Ensure all required fields are provided
+        if not all([name, email, password]):
+            return jsonify({'isSuccess': False, 'message': 'Missing required fields'}), 400
+        user = User(name, email, password)
+        isSuccess, message = user.register()
+        results = {
+            'isSuccess': isSuccess,
+            'message': message
+        }
+        return jsonify(results), 200 if isSuccess else 400
+    except:
+        return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
+
 
 
 @app.route('/login', methods=['GET'])

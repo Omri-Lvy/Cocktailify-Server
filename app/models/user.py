@@ -11,14 +11,13 @@ class User:
     def register(self):
         users = mongo.db.users
         if users is None:
-            print('users is None')
-            return False
+            return False, 'Error occur try again later'
         existing_user = users.find_one({'username': self.username}) if users is not None else None
         if existing_user is None:
             hashpass = bcrypt.generate_password_hash(self.password).decode('utf-8')
             users.insert_one({'username': self.username, 'email': self.email, 'password': hashpass})
-            return True
-        return False
+            return True, ''
+        return False, 'User exists'
 
     @staticmethod
     def login(username, password):
