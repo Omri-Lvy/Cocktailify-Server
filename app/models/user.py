@@ -1,3 +1,5 @@
+from bson import ObjectId
+
 from app import mongo, bcrypt
 
 
@@ -16,14 +18,15 @@ class User:
             existing_user = users.find_one({'email': self.email}) if users is not None else None
             if existing_user is None:
                 hashpass = bcrypt.generate_password_hash(self.password).decode('utf-8')
-                result = users.insert_one({'username': self.username, 'email': self.email, 'password': hashpass})
-                user_id = result.inserted_id
-                return True, str(user_id)
-            return False, str(existing_user['_id']) if existing_user else 'Error occur try again later'
-        except Exception as e:
-            print(e)
+                result = users.insert_one({'username': self.username, 'email': self.email, 'password': hashpass, 'favorites': self.favorites})
+                user = {
+                    '_id': result.inserted_id,
+                    'favorites': self.favorites
+                }
+                return True, user
+            return False, None if existing_user else 'Error occur try again later'
+        except RuntimeError as e:
             return False, 'Error occur try again later'
-
 
     @staticmethod
     def login(email, password):
@@ -31,5 +34,32 @@ class User:
         login_user = users.find_one({'email': email}) if users is not None else None
         if login_user:
             if bcrypt.check_password_hash(login_user['password'], password):
-                return True, str(login_user['_id'])
-        return False, ''
+                user = {
+                    '_id': str(login_user['_id']),
+                    'favorites': login_user['favorites'] if 'favorites' in login_user else []
+                }
+                return True, user
+        return False, None
+
+    @staticmethod
+    def add_to_favorites(user_id, cocktail):
+        users = mongo.db.users
+        user = users.find_one({'_id': ObjectId(user_id)})
+        if user:
+            updated_favorites = user['favorites'] if 'favorites' in user else [] + [cocktail]
+            users.update_one({'_id': user_id}, {'$set': {'favorites': updated_favorites}})
+            return True, 'Cocktail added to favorites'
+        return False, 'Error occur try again later'
+
+    @staticmethod
+    def remove_from_favorites(user_id, cocktail):
+        users = mongo.db.users
+        user = users.find_one({'_id': ObjectId(user_id)})
+        if user:
+            favorites = user['favorites'] if 'favorites' in user else []
+            favorite = next((f for f in user['favorites'] if f['idDrink'] == cocktail['idDrink']), None)
+            if favorite:
+                favorites.remove(favorite)
+                users.update_one({'_id': user_id}, {'$set': {'favorites': favorite}})
+            return True, 'Cocktail added to favorites'
+        return False, 'Error occur try again later'

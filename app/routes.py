@@ -20,13 +20,16 @@ def register():
         # Ensure all required fields are provided
         if not all([name, email, password]):
             return jsonify({'isSuccess': False, 'message': 'Missing required fields'}), 400
-        user = User(name, email, password)
-        isSuccess, user_id = user.register()
+        user = User(name, email, password, [])
+        isSuccess, user = user.register()
         message = 'User registered successfully' if isSuccess else 'User already exists'
         results = {
             'isSuccess': isSuccess,
             'message': message,
-            'userID': user_id
+            'user': {
+                'id': user['_id'],
+                'favorites': user['favorites']
+            }
         }
         return jsonify(results), 200 if isSuccess else 400
     except RuntimeError:
@@ -42,12 +45,22 @@ def login():
             return jsonify({'isSuccess': False, 'message': 'No data provided'}), 400
         email = data.get('email')
         password = data.get('password')
-        isSuccess, user_id = User.login(email, password)
-        results = {
-            'isSuccess': isSuccess,
-            'message': 'User logged in!',
-            'userID': user_id
-        }
+        isSuccess, user = User.login(email, password)
+        if user:
+            results = {
+                'isSuccess': isSuccess,
+                'message': 'User logged in!' if isSuccess else 'Email or password is incorrect',
+                'user': {
+                    'id': str(user['_id']),
+                    'favorites': user['favorites']
+                }
+            }
+        else:
+            results = {
+                'isSuccess': isSuccess,
+                'message': 'Email or password is incorrect',
+                'user': None
+            }
         return jsonify(results), 200 if isSuccess else 400
     except RuntimeError:
         return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
@@ -91,3 +104,33 @@ def search_by_alcoholic(type):
         case _:
             return redirect(url_for('explore_page'))
     return cocktails
+
+
+@app.route('/add-favorite', methods=['POST'])
+def add_to_favorites():
+    try:
+        request_data = request.get_json()
+        data = json.loads(request_data)
+        if not data:
+            return jsonify({'isSuccess': False, 'message': 'No data provided'}), 400
+        user_id = data.get('user_id')
+        cocktail = data.get('cocktail')
+        isSuccess, message = User.add_to_favorites(user_id, cocktail)
+        return jsonify({'isSuccess': isSuccess, 'message': message}), 200 if isSuccess else 400
+    except RuntimeError:
+        return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
+
+
+@app.route('/remove-favorite', methods=['POST'])
+def remove_from_favorites():
+    try:
+        request_data = request.get_json()
+        data = json.loads(request_data)
+        if not data:
+            return jsonify({'isSuccess': False, 'message': 'No data provided'}), 400
+        user_id = data.get('user_id')
+        cocktail = data.get('cocktail_id')
+        isSuccess, message = User.remove_from_favorites(user_id, cocktail)
+        return jsonify({'isSuccess': isSuccess, 'message': message}), 200 if isSuccess else 400
+    except RuntimeError:
+        return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
