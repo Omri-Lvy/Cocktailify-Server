@@ -26,15 +26,10 @@ class User:
 
 
     @staticmethod
-    def login(username, password):
+    def login(email, password):
         users = mongo.db.users
-        login_user = users.find_one({
-            '$or': [
-                {'username': username},
-                {'email': username}
-            ]
-        })
+        login_user = users.find_one({'email': email}) if users is not None else None
         if login_user:
             if bcrypt.check_password_hash(login_user['password'], password):
-                return True
-        return False
+                return True, str(login_user['_id'])
+        return False, ''

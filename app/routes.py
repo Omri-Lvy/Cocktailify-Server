@@ -29,18 +29,28 @@ def register():
             'userID': user_id
         }
         return jsonify(results), 200 if isSuccess else 400
-    except:
+    except RuntimeError:
         return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
 
 
-
-@app.route('/login', methods=['GET'])
+@app.route('/login', methods=['POST'])
 def login():
-    name = request.form['name']
-    password = request.form['password']
-    if User.login(name, password):
-        return 'User logged in!'
-    return 'Invalid username or password'
+    try:
+        request_data = request.get_json()
+        data = json.loads(request_data)
+        if not data:
+            return jsonify({'isSuccess': False, 'message': 'No data provided'}), 400
+        email = data.get('email')
+        password = data.get('password')
+        isSuccess, user_id = User.login(email, password)
+        results = {
+            'isSuccess': isSuccess,
+            'message': 'User logged in!',
+            'userID': user_id
+        }
+        return jsonify(results), 200 if isSuccess else 400
+    except RuntimeError:
+        return jsonify({'isSuccess': False, 'message': 'Server Error occurred'}), 500
 
 
 @app.route('/explore', methods=['GET'])
