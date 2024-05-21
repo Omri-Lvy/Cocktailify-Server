@@ -21,10 +21,12 @@ def register():
         if not all([name, email, password]):
             return jsonify({'isSuccess': False, 'message': 'Missing required fields'}), 400
         user = User(name, email, password)
-        isSuccess, message = user.register()
+        isSuccess, user_id = user.register()
+        message = 'User registered successfully' if isSuccess else 'User already exists'
         results = {
             'isSuccess': isSuccess,
-            'message': message
+            'message': message,
+            'userID': user_id
         }
         return jsonify(results), 200 if isSuccess else 400
     except:
