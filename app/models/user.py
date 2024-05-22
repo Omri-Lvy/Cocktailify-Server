@@ -46,8 +46,10 @@ class User:
         users = mongo.db.users
         user = users.find_one({'_id': ObjectId(user_id)})
         if user:
-            updated_favorites = user['favorites'] if 'favorites' in user else [] + [cocktail]
-            users.update_one({'_id': user_id}, {'$set': {'favorites': updated_favorites}})
+            favorites = user.get('favorites', [])
+            if not any(f['idDrink'] == cocktail['idDrink'] for f in favorites):
+                favorites.append(cocktail)
+            users.update_one({'_id': ObjectId(user_id)}, {'$set': {'favorites': favorites}})
             return True, 'Cocktail added to favorites'
         return False, 'Error occur try again later'
 
@@ -60,6 +62,6 @@ class User:
             favorite = next((f for f in user['favorites'] if f['idDrink'] == cocktail['idDrink']), None)
             if favorite:
                 favorites.remove(favorite)
-                users.update_one({'_id': user_id}, {'$set': {'favorites': favorite}})
+                users.update_one({'_id': ObjectId(user_id)}, {'$set': {'favorites': favorites}})
             return True, 'Cocktail added to favorites'
         return False, 'Error occur try again later'

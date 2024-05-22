@@ -6,8 +6,7 @@ from flask_cors import CORS
 from app.config import Config
 
 app = Flask(__name__)
-allow_origins =[
-    Config.PROD_ORIGIN,
+allow_origins = [
     Config.DEV_ORIGIN,
 ]
 app.config['MONGO_URI'] = Config.MONGO_URI
