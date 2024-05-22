@@ -1,3 +1,5 @@
+import json
+
 from bson import ObjectId
 
 from app import mongo, bcrypt
@@ -47,19 +49,19 @@ class User:
         user = users.find_one({'_id': ObjectId(user_id)})
         if user:
             favorites = user.get('favorites', [])
-            if not any(f['idDrink'] == cocktail['idDrink'] for f in favorites):
+            if not any(f for f in favorites if isinstance(f, dict) and f.get('idDrink') == cocktail['idDrink']):
                 favorites.append(cocktail)
-            users.update_one({'_id': ObjectId(user_id)}, {'$set': {'favorites': favorites}})
+                users.update_one({'_id': ObjectId(user_id)}, {'$set': {'favorites': favorites}})
             return True, 'Cocktail added to favorites'
         return False, 'Error occur try again later'
 
     @staticmethod
-    def remove_from_favorites(user_id, cocktail):
+    def remove_from_favorites(user_id, cocktail_id):
         users = mongo.db.users
         user = users.find_one({'_id': ObjectId(user_id)})
         if user:
             favorites = user['favorites'] if 'favorites' in user else []
-            favorite = next((f for f in user['favorites'] if f['idDrink'] == cocktail['idDrink']), None)
+            favorite = next((f for f in favorites if isinstance(f, dict) and f.get('idDrink') == cocktail_id), None)
             if favorite:
                 favorites.remove(favorite)
                 users.update_one({'_id': ObjectId(user_id)}, {'$set': {'favorites': favorites}})
