@@ -20,4 +20,8 @@ CORS(app, resources={r"/*": {
 mongo = PyMongo(app)
 bcrypt = Bcrypt(app)
 
-from app import routes
+from app.routes import auth_routes, cocktail_routes, favorite_routes
+
+auth_routes.register_routes(app)
+cocktail_routes.register_routes(app)
+favorite_routes.register_routes(app)
